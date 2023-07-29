@@ -115,7 +115,7 @@ class Linear(Module):
 class Flatten(Module):
     def forward(self, X):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return ops.reshape(X, (X.shape[0], -1))
         ### END YOUR SOLUTION
 
 
@@ -174,12 +174,17 @@ class LayerNorm1d(Module):
         self.dim = dim
         self.eps = eps
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.weight = init.ones(dim, device=device, dtype=dtype, requires_grad=True)
+        self.bias = init.zeros(dim, device=device, dtype=dtype, requires_grad=True)
         ### END YOUR SOLUTION
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        mean = ops.reshape(x.sum(axes=-1) / self.dim, (-1, 1)) # (batch, 1)
+        x_mean = x - mean.broadcast_to(x.shape) # (batch, n)
+        std = (((x_mean ** 2).sum(axes=-1).reshape((-1,1)) / self.dim) + self.eps) ** 0.5 # # (batch, 1)
+        normed = x_mean / std.broadcast_to(x.shape)
+        return self.weight.broadcast_to(x.shape) * normed + self.bias.broadcast_to(x.shape)
         ### END YOUR SOLUTION
 
 

@@ -156,7 +156,7 @@ class PowerScalar(TensorOp):
         if self.scalar == 0:
             return out_grad * 0
         
-        return out_grad * mul_scalar(power_scalar(a, self.scalar - 1), self.scalar)
+        return out_grad * self.scalar * power_scalar(a, self.scalar - 1)
         ### END YOUR SOLUTION
 
 
@@ -175,7 +175,7 @@ class EWiseDiv(TensorOp):
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
         lhs, rhs = node.inputs
-        return out_grad * (rhs ** -1), - lhs / (rhs * rhs)
+        return (out_grad / rhs, -out_grad * lhs / rhs ** 2)
         ### END YOUR SOLUTION
 
 

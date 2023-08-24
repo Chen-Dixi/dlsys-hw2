@@ -158,13 +158,30 @@ class BatchNorm1d(Module):
         self.eps = eps
         self.momentum = momentum
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.weight = init.ones(dim, device=device, dtype=dtype, requires_grad=True)
+        self.bias = init.zeros(dim, device=device, dtype=dtype, requires_grad=True)
+        self.running_mean = init.zeros(dim, device=device, dtype=dtype, requires_grad=False)
+        self.running_var = init.ones(dim, device=device, dtype=dtype, requires_grad=False)
         ### END YOUR SOLUTION
 
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        
+        batch_size = x.shape[0]
+        if self.training:
+            batch_mean = x.sum(axes=0) / batch_size # (dim,) batch的均值
+            x_mean = x - batch_mean.broadcast_to(x.shape) # (b, dim)
+            std = ((x_mean ** 2).sum(axes=0) / batch_size) # (dim, ) batch的方差
+            self.running_mean = (1-self.momentum) * self.running_mean + self.momentum * batch_mean.detach()
+            self.running_var = (1-self.momentum) * self.running_var + self.momentum * std.detach()
+
+        else:
+            x_mean = x - self.running_mean.broadcast_to(x.shape)
+            std = self.running_var
+        
+        normed = x_mean / ((std + self.eps) ** 0.5).broadcast_to(x.shape) # 分布标准化之后 (b, dim)
+        return self.weight.broadcast_to(x.shape) * normed + self.bias.broadcast_to(x.shape)
         ### END YOUR SOLUTION
 
 
@@ -184,6 +201,7 @@ class LayerNorm1d(Module):
         x_mean = x - mean.broadcast_to(x.shape) # (batch, n)
         std = (((x_mean ** 2).sum(axes=-1).reshape((-1,1)) / self.dim) + self.eps) ** 0.5 # # (batch, 1)
         normed = x_mean / std.broadcast_to(x.shape)
+        # 1 维张量 (4,)可以被broadcast_to为(b, 4),但不能broadcast_to(4, b)。扩展的维度只能是前一个
         return self.weight.broadcast_to(x.shape) * normed + self.bias.broadcast_to(x.shape)
         ### END YOUR SOLUTION
 
@@ -195,7 +213,12 @@ class Dropout(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        mask = init.randb(*x.shape, p=1 - self.p)
+        if self.training:
+            x_mask = x * mask
+            return x_mask / (1 - self.p)
+        else:
+            return x
         ### END YOUR SOLUTION
 
 

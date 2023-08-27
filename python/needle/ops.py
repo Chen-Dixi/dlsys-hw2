@@ -189,7 +189,7 @@ class DivScalar(TensorOp):
 
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
-        return a / self.scalar
+        return (a / self.scalar).astype(a.dtype)
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
@@ -297,9 +297,6 @@ class Summation(TensorOp):
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
         input_shape = node.inputs[0].shape
-        input_dim = node.inputs[0].ndim
-        output_shape = out_grad.shape
-        output_dim = out_grad.ndim
         tmp_reshape = list(input_shape)
         if self.axes is None:
             # 求和成1个scalar
@@ -395,14 +392,13 @@ def exp(a):
 class ReLU(TensorOp):
     def compute(self, a):
         ### BEGIN YOUR SOLUTION
-        relu_mask = array_api.greater(a, 0)
-        return array_api.multiply(a, relu_mask) # Multiply arguments element-wise
+        return array_api.maximum(a, 0) # Multiply arguments element-wise
         ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
         ### BEGIN YOUR SOLUTION
-        relu_mask = Tensor((node.inputs[0].cached_data > 0).astype(out_grad.numpy().dtype))
-        return out_grad * relu_mask
+        a = node.inputs[0].realize_cached_data()
+        return out_grad * Tensor(a > 0)
         ### END YOUR SOLUTION
 
 

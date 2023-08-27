@@ -97,7 +97,7 @@ class Linear(Module):
             self.bias = Parameter(init.kaiming_uniform(
                 out_features, 
                 1,
-                device=device, dtype=dtype)).reshape((1, out_features))
+                device=device, dtype=dtype).reshape((1, out_features)))
         ### END YOUR SOLUTION
 
     def forward(self, X: Tensor) -> Tensor:
@@ -144,9 +144,16 @@ class SoftmaxLoss(Module):
         ### BEGIN YOUR SOLUTION
         in_shape = logits.shape
         n_dim = in_shape[-1]
-        zy_sum = (logits * init.one_hot(n_dim, y, device=y.device, dtype=y.dtype)).sum()
+        zy_sum = (logits * init.one_hot(n_dim, y, device=y.device, dtype=logits.dtype)).sum()
         logexp_sum = ops.logsumexp(logits, axes=-1).sum()
         return (logexp_sum - zy_sum) / in_shape[0]
+        ### END YOUR SOLUTION
+    
+    # def forward(self, logits: Tensor, y: Tensor):
+    #     ### BEGIN YOUR SOLUTION
+    #     exp_sum = ops.logsumexp(logits, axes=(1, )).sum()
+    #     z_y_sum = (logits * init.one_hot(logits.shape[1], y)).sum()
+    #     return (exp_sum - z_y_sum) / logits.shape[0]
         ### END YOUR SOLUTION
 
 
@@ -158,8 +165,8 @@ class BatchNorm1d(Module):
         self.eps = eps
         self.momentum = momentum
         ### BEGIN YOUR SOLUTION
-        self.weight = init.ones(dim, device=device, dtype=dtype, requires_grad=True)
-        self.bias = init.zeros(dim, device=device, dtype=dtype, requires_grad=True)
+        self.weight = Parameter(init.ones(dim, device=device, dtype=dtype, requires_grad=True))
+        self.bias = Parameter(init.zeros(dim, device=device, dtype=dtype, requires_grad=True))
         self.running_mean = init.zeros(dim, device=device, dtype=dtype, requires_grad=False)
         self.running_var = init.ones(dim, device=device, dtype=dtype, requires_grad=False)
         ### END YOUR SOLUTION
@@ -191,8 +198,8 @@ class LayerNorm1d(Module):
         self.dim = dim
         self.eps = eps
         ### BEGIN YOUR SOLUTION
-        self.weight = init.ones(dim, device=device, dtype=dtype, requires_grad=True)
-        self.bias = init.zeros(dim, device=device, dtype=dtype, requires_grad=True)
+        self.weight = Parameter(init.ones(dim, device=device, dtype=dtype, requires_grad=True))
+        self.bias = Parameter(init.zeros(dim, device=device, dtype=dtype, requires_grad=True))
         ### END YOUR SOLUTION
 
     def forward(self, x: Tensor) -> Tensor:
@@ -231,6 +238,3 @@ class Residual(Module):
         ### BEGIN YOUR SOLUTION
         return x + self.fn(x)
         ### END YOUR SOLUTION
-
-
-

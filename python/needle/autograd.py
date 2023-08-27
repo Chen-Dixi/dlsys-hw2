@@ -431,7 +431,7 @@ def compute_gradient_of_variables(output_tensor, out_grad):
 
     ### BEGIN YOUR SOLUTION
     for node in reverse_topo_order:
-        node_gradient = sum(node_to_output_grads_list[node])
+        node_gradient = sum_node_list(node_to_output_grads_list[node])
         node.grad = node_gradient
         if not node.is_leaf():
             partial_adjoints = node.op.gradient_as_tuple(node_gradient, node)

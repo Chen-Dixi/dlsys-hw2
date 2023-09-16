@@ -56,24 +56,40 @@ class Adam(Optimizer):
         self.beta2 = beta2
         self.eps = eps
         self.weight_decay = weight_decay
-        self.t = 0
-
+        # 把t用字典代替
+        self.t = {}
         self.m = {}
         self.v = {}
 
     def step(self):
         ### BEGIN YOUR SOLUTION
-        self.t += 1
-        for i, param in enumerate(self.params):
-            if i not in self.m:
-                self.m[i] = ndl.init.zeros(*param.shape, device=param.device, dtype=param.dtype)
-                self.v[i] = ndl.init.zeros(*param.shape, device=param.device, dtype=param.dtype)
-            grad_data = param.grad.data + param.data * self.weight_decay
-            # m_{t+1}, v{t+1}
-            self.m[i] = self.beta1 * self.m[i] + (1 - self.beta1) * grad_data
-            self.v[i] = self.beta2 * self.v[i] + (1 - self.beta2) * grad_data**2
+        for p in self.params:
+            if p not in self.m:
+                mt = ndl.init.zeros(*p.grad.shape, device=p.device, dtype=p.dtype, requires_grad=False)
+            else:
+                mt = self.m[p]
+            
+            if p not in self.v:
+                vt = ndl.init.zeros(*p.grad.shape, device=p.device, dtype=p.dtype, requires_grad=False)
+            else:
+                vt = self.v[p]
+
+            if p not in self.t:
+                t = 0
+            else:
+                t = self.t[p]
+            
+            grad = p.grad.data + self.weight_decay * p.data
+            
+            mt_1 = self.beta1 * mt + (1-self.beta1) * grad
+            vt_1 = self.beta2 * vt + (1-self.beta2) * (grad ** 2)
+            t_1 = t + 1
+            self.m[p] = mt_1
+            self.v[p] = vt_1
+            self.t[p] = t_1
             # bias correction
-            m_hat = (self.m[i]) / (1 - self.beta1 ** self.t)
-            v_hat = (self.v[i]) / (1 - self.beta2 ** self.t)
-            param.data = param.data - self.lr * m_hat / (v_hat ** 0.5 + self.eps) 
+
+            m_hat = mt_1 / (1 - self.beta1 ** t_1)
+            v_hat = vt_1 / (1 - self.beta2 ** t_1)
+            p.data = p.data - self.lr * m_hat / (v_hat ** 0.5 + self.eps)
         ### END YOUR SOLUTION
